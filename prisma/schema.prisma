@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String    @id @default(uuid())
+  nom           String
+  email         String    @unique
+  motDePasse    String
+  role          Role      @default(VIEWER)
+  secteurs      UserSecteur[]
+  analyses      AnalyseIA[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("utilisateurs")
+}
+
+model Secteur {
+  id            String    @id @default(uuid())
+  nom           String    @unique
+  users         UserSecteur[]
+  dashboards    Dashboard[]
+
+  @@map("secteurs")
+}
+
+model UserSecteur {
+  userId        String
+  secteurId     String
+  user          User      @relation(fields: [userId], references: [id])
+  secteur       Secteur   @relation(fields: [secteurId], references: [id])
+
+  @@id([userId, secteurId])
+  @@map("utilisateur_secteurs")
+}
+
+model Dashboard {
+  id            String    @id @default(uuid())
+  titre         String
+  description   String?
+  urlPowerBI    String
+  secteurId     String
+  secteur       Secteur   @relation(fields: [secteurId], references: [id])
+  kpis          KPI[]
+
+  @@map("dashboards")
+}
+
+model KPI {
+  id            String    @id @default(uuid())
+  nom           String
+  unite         String?
+  dashboardId   String
+  dashboard     Dashboard @relation(fields: [dashboardId], references: [id])
+  valeurs       KPIValue[]
+  analyses      AnalyseIA[]
+
+  @@map("kpis")
+}
+
+model KPIValue {
+  id            String    @id @default(uuid())
+  valeur        Float
+  dateMesure    DateTime
+  kpiId         String
+  kpi           KPI       @relation(fields: [kpiId], references: [id])
+
+  @@map("kpi_valeurs")
+}
+
+model AnalyseIA {
+  id            String    @id @default(uuid())
+  dateAnalyse   DateTime  @default(now())
+  resultat      String    @db.Text
+  periodeDebut  DateTime?
+  periodeFin    DateTime?
+  kpiId         String
+  kpi           KPI       @relation(fields: [kpiId], references: [id])
+  utilisateurId String
+  utilisateur   User      @relation(fields: [utilisateurId], references: [id])
+
+  @@map("analyses_ia")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  VIEWER
+  ANALYST
+}
