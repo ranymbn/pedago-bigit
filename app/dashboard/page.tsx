@@ -1,6 +1,35 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "../api/auth/[...nextauth]/route";
+import { PrismaClient } from "@prisma/client";
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+async function getDashboards(userId: string, role: string) {
+  if (role === "ADMIN") {
+    // Admin voit tous les dashboards
+    return await prisma.dashboard.findMany({
+      include: { secteur: true }
+    });
+  } else {
+    // Les autres voient leurs dashboards via les secteurs
+    const userSecteurs = await prisma.userSecteur.findMany({
+      where: { userId },
+      select: { secteurId: true }
+    });
+    
+    const secteursIds = userSecteurs.map(us => us.secteurId);
+    
+    return await prisma.dashboard.findMany({
+      where: { secteurId: { in: secteursIds } },
+      include: { secteur: true }
+    });
+  }
+}
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -14,6 +43,9 @@ export default async function DashboardPage() {
   const role = session.user?.role ?? "";
   const initiale = name?.charAt(0).toUpperCase() ?? "?";
   const roleLower = role?.toLowerCase() ?? "user";
+
+  // Récupérer les dashboards
+  const dashboards = await getDashboards(session.user.id, role);
 
   return (
     <>
@@ -152,7 +184,7 @@ export default async function DashboardPage() {
         /* Content */
         .db-content {
           padding: 36px 40px;
-          max-width: 1200px;
+          max-width: 1400px;
           margin: 0 auto;
         }
 
@@ -170,44 +202,164 @@ export default async function DashboardPage() {
           margin-bottom: 32px;
         }
 
-        /* Cards grid */
-        .db-cards {
+        /* Section dashboards */
+        .db-section-title {
+          font-size: 20px;
+          font-weight: 700;
+          color: #1e1b2e;
+          margin: 40px 0 20px;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .db-section-title svg {
+          width: 24px;
+          height: 24px;
+          color: #6B21A8;
+        }
+
+        .db-dashboards-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+          gap: 24px;
+          margin-bottom: 40px;
+        }
+
+        .db-dashboard-card {
+          background: white;
+          border-radius: 18px;
+          box-shadow: 0 4px 20px rgba(107,33,168,0.08);
+          overflow: hidden;
+          border: 1px solid rgba(107,33,168,0.05);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .db-dashboard-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 30px rgba(107,33,168,0.15);
+        }
+
+        .db-dashboard-header {
+          background: #6B21A8;
+          padding: 16px 20px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .db-dashboard-header h3 {
+          font-size: 16px;
+          font-weight: 700;
+          color: white;
+        }
+
+        .db-dashboard-badge {
+          background: #F97316;
+          color: white;
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .db-dashboard-body {
+          padding: 20px;
+        }
+
+        .db-dashboard-description {
+          font-size: 13px;
+          color: #6b7280;
+          margin-bottom: 15px;
+        }
+
+        .db-dashboard-iframe {
+          width: 100%;
+          height: 300px;
+          border: none;
+          border-radius: 8px;
+          background: #f4f4f8;
+        }
+
+        .db-dashboard-footer {
+          padding: 15px 20px;
+          border-top: 1px solid #f0ecfa;
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
+        }
+
+        .db-btn-export {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: none;
+          font-family: 'Outfit', sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.15s, transform 0.1s;
+        }
+
+        .db-btn-pdf {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .db-btn-pdf:hover {
+          background: #dc2626;
+          color: white;
+        }
+
+        .db-btn-excel {
+          background: #f0fdf4;
+          color: #15803d;
+        }
+
+        .db-btn-excel:hover {
+          background: #15803d;
+          color: white;
+        }
+
+        /* Stats cards */
+        .db-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
           gap: 20px;
-          margin-bottom: 32px;
+          margin-bottom: 40px;
         }
 
         .db-stat-card {
           background: white;
-          border-radius: 16px;
-          padding: 24px;
+          border-radius: 14px;
+          padding: 20px;
           box-shadow: 0 2px 12px rgba(107,33,168,0.07);
           display: flex;
           align-items: center;
-          gap: 18px;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .db-stat-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(107,33,168,0.12);
+          gap: 15px;
         }
 
         .db-stat-icon {
-          width: 56px;
-          height: 56px;
-          border-radius: 14px;
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
           font-size: 24px;
         }
 
         .icon-purple { background: #ede9fe; color: #6B21A8; }
         .icon-orange { background: #fff7ed; color: #F97316; }
         .icon-green  { background: #f0fdf4; color: #15803d; }
+        .icon-blue   { background: #e0f2fe; color: #0369a1; }
+
+        .db-stat-content {
+          flex: 1;
+        }
 
         .db-stat-label {
           font-size: 12px;
@@ -219,7 +371,7 @@ export default async function DashboardPage() {
         }
 
         .db-stat-value {
-          font-size: 22px;
+          font-size: 24px;
           font-weight: 800;
           color: #1e1b2e;
         }
@@ -231,6 +383,7 @@ export default async function DashboardPage() {
           box-shadow: 0 2px 12px rgba(107,33,168,0.07);
           overflow: hidden;
           max-width: 600px;
+          margin-top: 40px;
         }
 
         .db-profile-header {
@@ -355,7 +508,7 @@ export default async function DashboardPage() {
           .db-navbar { padding: 0 20px; }
           .db-breadcrumb { padding: 12px 20px; }
           .db-content { padding: 24px 20px; }
-          .db-cards { grid-template-columns: 1fr; }
+          .db-dashboards-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -391,16 +544,89 @@ export default async function DashboardPage() {
           <h1 className="db-page-title">Tableau de bord</h1>
           <p className="db-page-sub">Bienvenue, {name} — voici un aperçu de votre espace.</p>
 
-          {/* Cards */}
-          <div className="db-cards">
+          {/* Stats cards */}
+          <div className="db-stats-grid">
             <div className="db-stat-card">
               <div className="db-stat-icon icon-purple">📊</div>
-              <div>
-                <div className="db-stat-label">VOS DASHBORD</div>
-                <div className="db-stat-value"></div>
+              <div className="db-stat-content">
+                <div className="db-stat-label">Dashboards</div>
+                <div className="db-stat-value">{dashboards.length}</div>
+              </div>
+            </div>
+            <div className="db-stat-card">
+              <div className="db-stat-icon icon-orange">👥</div>
+              <div className="db-stat-content">
+                <div className="db-stat-label">Secteurs</div>
+                <div className="db-stat-value">{
+                  new Set(dashboards.map(d => d.secteur.nom)).size
+                }</div>
               </div>
             </div>
           </div>
+
+          {/* Section Dashboards */}
+          {dashboards.length > 0 ? (
+            <>
+              <div className="db-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M3 9h18M9 21V9"/>
+                </svg>
+                Vos dashboards
+              </div>
+
+              <div className="db-dashboards-grid">
+                {dashboards.map((dashboard) => (
+                  <div key={dashboard.id} className="db-dashboard-card">
+                    <div className="db-dashboard-header">
+                      <h3>{dashboard.titre}</h3>
+                      <span className="db-dashboard-badge">{dashboard.secteur.nom}</span>
+                    </div>
+                    <div className="db-dashboard-body">
+                      {dashboard.description && (
+                        <p className="db-dashboard-description">{dashboard.description}</p>
+                      )}
+                      <iframe
+                        src={dashboard.urlPowerBI}
+                        className="db-dashboard-iframe"
+                        title={dashboard.titre}
+                        allowFullScreen
+                      />
+                    </div>
+                    {(role === "MANAGER" || role === "ADMIN") && (
+                      <div className="db-dashboard-footer">
+                        <button className="db-btn-export db-btn-pdf">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                          </svg>
+                          PDF
+                        </button>
+                        <button className="db-btn-export db-btn-excel">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="8" y1="16" x2="16" y2="16"/>
+                            <line x1="8" y1="12" x2="16" y2="12"/>
+                          </svg>
+                          Excel
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="db-dashboards-grid">
+              <div className="db-dashboard-card">
+                <div className="db-dashboard-body" style={{ textAlign: 'center', padding: '40px' }}>
+                  <p style={{ color: '#9189a8' }}>Aucun dashboard disponible pour votre rôle.</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Profile card */}
           <div className="db-profile-card">

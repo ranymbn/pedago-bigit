@@ -20,10 +20,19 @@ export default function LoginPage() {
         password,
         redirect: false,
       });
+      
       if (result?.error) {
         setError("Email ou mot de passe incorrect");
       } else {
-        router.push("/dashboard");
+        // Récupérer la session pour connaître le rôle
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+        
+        if (session?.user?.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
       }
     } catch (error) {
       setError("Une erreur est survenue");
