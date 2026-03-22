@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import AzureADProvider from "next-auth/providers/azure-ad";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -14,6 +15,16 @@ const prisma = new PrismaClient({ adapter });
 
 export const authOptions = {
   providers: [
+    AzureADProvider({
+      clientId: process.env.AZURE_AD_CLIENT_ID,
+      clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
+      tenantId: process.env.AZURE_AD_TENANT_ID,
+      authorization: {
+        params: {
+          scope: "openid profile email https://analysis.windows.net/powerbi/api/Report.Read.All"
+        }
+      }
+    }),
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -25,7 +36,6 @@ export const authOptions = {
           return null;
         }
 
-        // Chercher l'utilisateur dans la base de données
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
           include: {
@@ -42,7 +52,6 @@ export const authOptions = {
           return null;
         }
 
-        // Vérifier le mot de passe
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.motDePasse
@@ -69,11 +78,15 @@ export const authOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.secteurs = user.secteurs;
+      }
+      // Sauvegarder le token Azure SEULEMENT si c'est une connexion Azure
+      if (account?.provider === "azure-ad" && account?.access_token) {
+        token.accessToken = account.access_token;
       }
       return token;
     },
@@ -82,6 +95,7 @@ export const authOptions = {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.secteurs = token.secteurs;
+        session.accessToken = token.accessToken;
       }
       return session;
     }

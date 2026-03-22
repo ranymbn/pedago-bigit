@@ -2,413 +2,282 @@
 
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import AdminNavbar from "../components/AdminNavbar";
 
 export default function AdminAccueilPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4 text-gray-600">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
+  if (status === "loading") return (
+    <>
+      <style>{styles}</style>
+      <div className="ac-loading"><div className="ac-spinner" /><p>Chargement...</p></div>
+    </>
+  );
 
-  if (status === "unauthenticated" || !session) {
-    redirect("/login");
-  }
-
-  if (session.user?.role !== "ADMIN") {
-    redirect("/dashboard");
-  }
+  if (status === "unauthenticated" || !session) redirect("/login");
+  if (session.user?.role !== "ADMIN") redirect("/dashboard");
 
   const prenom = session.user?.name?.split(" ")[0] || "Admin";
 
   return (
     <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+      <style>{styles}</style>
+      <AdminNavbar />
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+      <div className="ac-root">
 
-        .admin-home {
-          font-family: 'Outfit', sans-serif;
-          min-height: 100vh;
-          background: linear-gradient(135deg, #f4f4f8 0%, #ffffff 100%);
-        }
+        <div className="ac-hero">
+          <div className="ac-hero-badge">Espace Administrateur</div>
+          <h1 className="ac-hero-title">Bonjour, {prenom} 👋</h1>
+          <p className="ac-hero-sub">
+            Gérez votre plateforme PEDAGO BI depuis votre espace d'administration.
+          </p>
+        </div>
 
-        /* Navbar */
-        .navbar {
-          background: #6B21A8;
-          padding: 0 40px;
-          height: 70px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          box-shadow: 0 4px 12px rgba(107,33,168,0.15);
-        }
+        <div className="ac-cards">
 
-        .brand {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .brand-icon {
-          width: 40px;
-          height: 40px;
-          background: #F97316;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .brand-icon svg {
-          width: 22px;
-          height: 22px;
-          fill: white;
-        }
-
-        .brand-name {
-          font-size: 22px;
-          font-weight: 800;
-          color: white;
-          letter-spacing: 1px;
-        }
-
-        .brand-name span {
-          color: #F97316;
-        }
-
-        .user-info {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          background: rgba(255,255,255,0.1);
-          padding: 6px 15px 6px 6px;
-          border-radius: 40px;
-        }
-
-        .user-avatar {
-          width: 40px;
-          height: 40px;
-          background: #F97316;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: 700;
-          color: white;
-          font-size: 16px;
-        }
-
-        .user-name {
-          color: white;
-          font-size: 14px;
-          font-weight: 600;
-        }
-
-        /* Content */
-        .content {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 40px;
-        }
-
-        .welcome-section {
-          margin-bottom: 50px;
-        }
-
-        .welcome-title {
-          font-size: 36px;
-          font-weight: 800;
-          color: #1e1b2e;
-          margin-bottom: 8px;
-        }
-
-        .welcome-title span {
-          color: #6B21A8;
-          position: relative;
-        }
-
-        .welcome-title span::after {
-          content: '';
-          position: absolute;
-          bottom: -4px;
-          left: 0;
-          width: 100%;
-          height: 3px;
-          background: #F97316;
-          border-radius: 2px;
-        }
-
-        .welcome-sub {
-          font-size: 16px;
-          color: #9189a8;
-        }
-
-        /* Cards grid */
-        .cards-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 30px;
-          margin-top: 40px;
-        }
-
-        .card {
-          background: white;
-          border-radius: 24px;
-          padding: 40px 32px;
-          box-shadow: 0 15px 35px rgba(107,33,168,0.1);
-          cursor: pointer;
-          transition: all 0.3s ease;
-          border: 1px solid rgba(107,33,168,0.1);
-          text-decoration: none;
-          color: inherit;
-          display: block;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 6px;
-          background: #6B21A8;
-          transform: scaleX(0);
-          transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-          transform: translateY(-10px);
-          box-shadow: 0 25px 45px rgba(107,33,168,0.2);
-        }
-
-        .card:hover::before {
-          transform: scaleX(1);
-        }
-
-        .card-icon {
-          width: 70px;
-          height: 70px;
-          border-radius: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 24px;
-        }
-
-        .icon-users {
-          background: #ede9fe;
-        }
-
-        .icon-users svg {
-          width: 32px;
-          height: 32px;
-          color: #6B21A8;
-        }
-
-        .icon-dashboards {
-          background: #fff7ed;
-        }
-
-        .icon-dashboards svg {
-          width: 32px;
-          height: 32px;
-          color: #F97316;
-        }
-
-        .icon-secteurs {
-          background: #f0fdf4;
-        }
-
-        .icon-secteurs svg {
-          width: 32px;
-          height: 32px;
-          color: #15803d;
-        }
-
-        .card h2 {
-          font-size: 24px;
-          font-weight: 700;
-          color: #1e1b2e;
-          margin-bottom: 8px;
-        }
-
-        .card p {
-          font-size: 14px;
-          color: #9189a8;
-          line-height: 1.6;
-          margin-bottom: 20px;
-        }
-
-        .card-link {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #6B21A8;
-          font-weight: 600;
-          font-size: 14px;
-        }
-
-        .card-link svg {
-          width: 16px;
-          height: 16px;
-          transition: transform 0.2s;
-        }
-
-        .card:hover .card-link svg {
-          transform: translateX(5px);
-        }
-
-        /* Stats section */
-        .stats-section {
-          margin-top: 60px;
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          padding: 30px;
-          background: white;
-          border-radius: 20px;
-          box-shadow: 0 5px 20px rgba(107,33,168,0.05);
-        }
-
-        .stat-item {
-          text-align: center;
-        }
-
-        .stat-value {
-          font-size: 32px;
-          font-weight: 800;
-          color: #6B21A8;
-          margin-bottom: 4px;
-        }
-
-        .stat-label {
-          font-size: 13px;
-          color: #9189a8;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        @media (max-width: 768px) {
-          .navbar { padding: 0 20px; }
-          .content { padding: 20px; }
-          .welcome-title { font-size: 28px; }
-          .stats-section { grid-template-columns: 1fr; }
-        }
-      `}</style>
-
-      <div className="admin-home">
-        {/* Navbar */}
-        <nav className="navbar">
-          <div className="brand">
-            <div className="brand-icon">
-              <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          <button className="ac-card" onClick={() => router.push("/admin/utilisateurs")}>
+            <div className="ac-card-top">
+              <div className="ac-card-icon ac-icon-purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+              </div>
+              <span className="ac-card-tag ac-tag-purple">Gestion</span>
             </div>
-            <span className="brand-name">PEDAGO <span>BI</span></span>
-          </div>
-          <div className="user-info">
-            <div className="user-avatar">{prenom.charAt(0)}</div>
-            <span className="user-name">{session.user?.name}</span>
-          </div>
-        </nav>
-
-        {/* Content */}
-        <div className="content">
-          {/* Welcome */}
-          <div className="welcome-section">
-            <h1 className="welcome-title">
-              Bonjour, <span>{prenom}</span> 👋
-            </h1>
-            <p className="welcome-sub">
-              Gérez votre plateforme PEDAGO BI depuis votre espace d'administration.
+            <h2 className="ac-card-title">Utilisateurs</h2>
+            <p className="ac-card-desc">
+              Créez, modifiez et supprimez des utilisateurs. Attribuez-leur des rôles et des secteurs.
             </p>
-          </div>
-
-          {/* Cards */}
-          <div className="cards-grid">
-            {/* Carte Utilisateurs */}
-            <Link href="/admin/utilisateurs" className="card">
-              <div className="card-icon icon-users">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <h2>Gestion des utilisateurs</h2>
-              <p>Créez, modifiez et supprimez des utilisateurs. Attribuez-leur des rôles et des secteurs.</p>
-              <div className="card-link">
-                Accéder
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            {/* Carte Dashboards */}
-            <Link href="/admin/dashboards" className="card">
-              <div className="card-icon icon-dashboards">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <path d="M3 9h18M9 21V9"/>
-                </svg>
-              </div>
-              <h2>Gestion des dashboards</h2>
-              <p>Ajoutez, modifiez et supprimez des dashboards Power BI. Associez-les à des secteurs.</p>
-              <div className="card-link">
-                Accéder
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-
-            {/* Carte Secteurs */}
-            <Link href="/admin/secteurs" className="card">
-              <div className="card-icon icon-secteurs">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 3v18h18M18 3v18M3 9h18M3 15h18M9 3v18M15 3v18"/>
-                </svg>
-              </div>
-              <h2>Gestion des secteurs</h2>
-              <p>Gérez les secteurs de votre organisation (Finance, RH, Marketing...).</p>
-              <div className="card-link">
-                Accéder
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </div>
-            </Link>
-          </div>
-
-          {/* Stats */}
-          <div className="stats-section">
-            <div className="stat-item">
-              <div className="stat-value">3</div>
-              <div className="stat-label">Modules d'administration</div>
+            <div className="ac-card-link ac-link-purple">
+              Accéder
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </div>
-            <div className="stat-item">
-              <div className="stat-value">5</div>
-              <div className="stat-label">Secteurs disponibles</div>
+          </button>
+
+          <button className="ac-card" onClick={() => router.push("/admin/dashboards")}>
+            <div className="ac-card-top">
+              <div className="ac-card-icon ac-icon-orange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M3 9h18M9 21V9" />
+                </svg>
+              </div>
+              <span className="ac-card-tag ac-tag-orange">Power BI</span>
             </div>
-            <div className="stat-item">
-              <div className="stat-value">24/7</div>
-              <div className="stat-label">Disponibilité</div>
+            <h2 className="ac-card-title">Dashboards</h2>
+            <p className="ac-card-desc">
+              Ajoutez, modifiez et supprimez des dashboards Power BI. Associez-les à des secteurs.
+            </p>
+            <div className="ac-card-link ac-link-orange">
+              Accéder
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
             </div>
-          </div>
+          </button>
+
+          <button className="ac-card" onClick={() => router.push("/admin/secteurs")}>
+            <div className="ac-card-top">
+              <div className="ac-card-icon ac-icon-green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                  <polyline points="9 22 9 12 15 12 15 22" />
+                </svg>
+              </div>
+              <span className="ac-card-tag ac-tag-green">Organisation</span>
+            </div>
+            <h2 className="ac-card-title">Secteurs</h2>
+            <p className="ac-card-desc">
+              Gérez les secteurs de votre organisation (Finance, RH, Marketing...).
+            </p>
+            <div className="ac-card-link ac-link-green">
+              Accéder
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
+          </button>
+
         </div>
       </div>
     </>
   );
 }
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .ac-root {
+    font-family: 'Outfit', sans-serif;
+    min-height: calc(100vh - 64px);
+    background: #f4f4f8;
+    padding: 48px 40px;
+  }
+
+  .ac-loading {
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    background: #f4f4f8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #9189a8;
+    font-size: 14px;
+  }
+
+  .ac-spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #e2ddf0;
+    border-top-color: #6B21A8;
+    border-radius: 50%;
+    animation: ac-spin 0.7s linear infinite;
+  }
+  @keyframes ac-spin { to { transform: rotate(360deg); } }
+
+  /* ── Hero ── */
+  .ac-hero {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .ac-hero-badge {
+    display: inline-block;
+    background: #ede9fe;
+    color: #6B21A8;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 16px;
+  }
+
+  .ac-hero-title {
+    font-size: 34px;
+    font-weight: 800;
+    color: #1e1b2e;
+    margin-bottom: 12px;
+  }
+
+  .ac-hero-sub {
+    font-size: 15px;
+    color: #9189a8;
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── Cards grid ── */
+  .ac-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .ac-card {
+    background: white;
+    border: none;
+    border-radius: 18px;
+    padding: 28px;
+    cursor: pointer;
+    box-shadow: 0 2px 12px rgba(107,33,168,0.07);
+    transition: transform 0.15s, box-shadow 0.15s;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .ac-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(107,33,168,0.13);
+  }
+
+  .ac-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ac-card-icon {
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ac-card-icon svg { width: 22px; height: 22px; }
+
+  .ac-icon-purple { background: #ede9fe; }
+  .ac-icon-purple svg { color: #6B21A8; }
+
+  .ac-icon-orange { background: #fff7ed; }
+  .ac-icon-orange svg { color: #F97316; }
+
+  .ac-icon-green { background: #f0fdf4; }
+  .ac-icon-green svg { color: #16a34a; }
+
+  .ac-card-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+
+  .ac-tag-purple { background: #ede9fe; color: #6B21A8; }
+  .ac-tag-orange { background: #fff7ed; color: #ea6a05; }
+  .ac-tag-green  { background: #f0fdf4; color: #16a34a; }
+
+  .ac-card-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1e1b2e;
+  }
+
+  .ac-card-desc {
+    font-size: 13px;
+    color: #9189a8;
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .ac-card-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 4px;
+    transition: gap 0.15s;
+  }
+
+  .ac-card-link svg { width: 15px; height: 15px; transition: transform 0.15s; }
+  .ac-card:hover .ac-card-link svg { transform: translateX(3px); }
+
+  .ac-link-purple { color: #6B21A8; }
+  .ac-link-orange { color: #F97316; }
+  .ac-link-green  { color: #16a34a; }
+
+  @media (max-width: 768px) {
+    .ac-root { padding: 32px 16px; }
+    .ac-hero-title { font-size: 26px; }
+    .ac-cards { grid-template-columns: 1fr; }
+  }
+`;

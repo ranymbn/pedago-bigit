@@ -386,7 +386,7 @@ export default function LoginPage() {
             <h2>Pilotez votre établissement avec précision</h2>
             <div className="left-divider" />
             <p style={{ textAlign: "center" }}>
-           Accédez en temps réel à vos indicateurs clés, exploitez des analyses approfondies et prenez les décisions qui font la différence
+            Accédez en temps réel à vos indicateurs clés, exploitez des analyses approfondies et prenez les décisions qui font la différence
           </p>
           </div>
 
